@@ -20,7 +20,21 @@ class DeliveryUpdateProcessorTest {
     )
 
     @Test
-    fun `successfully processes an incoming delivery update`() {
+    fun `stores the order after a successful delivery update`() {
+        val anOrder = anOrderOf()
+        val aValidUpdate = aDeliveryUpdateOf(anOrder.id)
+
+        every { orderRepository.findByIdOrNull(any()) } returns anOrder
+        every { orderRepository.update(any()) } returns anOrder
+        every { emailSystem.send(any()) } returns "emailId"
+
+        deliveryUpdateProcessor.process(aValidUpdate)
+
+        verify { emailSystem.send(any()) }
+    }
+
+    @Test
+    fun `sends an email to customer after a successful delivery update`() {
         val anOrder = anOrderOf()
         val aValidUpdate = aDeliveryUpdateOf(anOrder.id)
 
@@ -40,7 +54,20 @@ class DeliveryUpdateProcessorTest {
                 )
             )
         }
-        verify { emailSystem.send(any()) }
+    }
+
+
+    @Test
+    fun `monitors after a successful delivery update`() {
+        val anOrder = anOrderOf()
+        val aValidUpdate = aDeliveryUpdateOf(anOrder.id)
+
+        every { orderRepository.findByIdOrNull(any()) } returns anOrder
+        every { orderRepository.update(any()) } returns anOrder
+        every { emailSystem.send(any()) } returns "emailId"
+
+        deliveryUpdateProcessor.process(aValidUpdate)
+
         meterRegistry.shouldHaveOnlyMeterWithValue(meterId = "updates.successful", count = 1)
     }
 
