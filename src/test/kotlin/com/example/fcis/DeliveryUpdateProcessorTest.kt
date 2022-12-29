@@ -11,12 +11,12 @@ class DeliveryUpdateProcessorTest {
     val orderRepository = mockk<OrderRepository>()
     val emailSystem = mockk<EmailSystem>()
     val meterRegistry = SimpleMeterRegistry()
-    val now = Instant.now()
+    val now: Instant = Instant.now()
     val deliveryUpdateProcessor = DeliveryUpdateProcessor(
         orderRepository,
         emailSystem,
         meterRegistry,
-        { now }
+        now = { now }
     )
 
     @Test
