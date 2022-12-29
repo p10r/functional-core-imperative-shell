@@ -20,7 +20,7 @@ class DeliveryUpdateProcessorTest {
     )
 
     @Test
-    fun `stores the order after a successful delivery update`() {
+    fun `sends an email to customer after a successful delivery update`() {
         val anOrder = anOrderOf()
         val aValidUpdate = aDeliveryUpdateOf(anOrder.id)
 
@@ -34,7 +34,7 @@ class DeliveryUpdateProcessorTest {
     }
 
     @Test
-    fun `sends an email to customer after a successful delivery update`() {
+    fun `stores the order after a successful delivery update`() {
         val anOrder = anOrderOf()
         val aValidUpdate = aDeliveryUpdateOf(anOrder.id)
 
