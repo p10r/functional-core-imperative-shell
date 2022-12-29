@@ -5,8 +5,6 @@ import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Metrics
 import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 
 class DeliveryUpdateProcessor(
     private val orderRepository: OrderRepository,
@@ -23,8 +21,9 @@ class DeliveryUpdateProcessor(
             return
         }
 
-        if (deliveryUpdate.isOlderThan(order.currentStatusDetails)) {
-            monitorOutdatedUpdate()
+        val result = order.process(deliveryUpdate)
+        if (result is OutdatedUpdate) {
+            monitor(result.eventName)
             log("Incoming update ${deliveryUpdate.id} is outdated! Ignoring it.")
             return
         }
@@ -58,18 +57,8 @@ class DeliveryUpdateProcessor(
         )
     }
 
-    private fun DeliveryUpdate.isOlderThan(currentStatusDetails: StatusDetails): Boolean =
-        statusUpdatedAt.toUTC().isBefore(currentStatusDetails.updatedAt.toUTC())
-
-    private fun Instant.toUTC(): LocalDateTime =
-        atOffset(ZoneOffset.UTC).toLocalDateTime()
-
     private fun monitorUnknownUpdate() {
         monitor("updates.unknown")
-    }
-
-    private fun monitorOutdatedUpdate() {
-        monitor("updates.outdated")
     }
 
     private fun monitorSuccessfulUpdate() {
