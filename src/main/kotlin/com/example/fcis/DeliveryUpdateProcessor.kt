@@ -14,19 +14,15 @@ class DeliveryUpdateProcessor(
     fun process(deliveryUpdate: DeliveryUpdate) {
         val order = orderRepository.findByIdOrNull(deliveryUpdate.orderId)
 
-        if (order == null) {
-            monitorUnknownUpdate()
-            log("No order with id ${deliveryUpdate.orderId} in database!")
-            return
-        }
+        when (val result = order.process(deliveryUpdate, now)) {
+            is UnknownUpdate       -> {
+                monitor(result.eventName)
+                log("No order with id ${deliveryUpdate.orderId} in database!")
+            }
 
-        val result = order.process(deliveryUpdate, now)
-
-        when (result) {
             is OutdatedUpdate      -> {
                 monitor(result.eventName)
                 log("Incoming update ${deliveryUpdate.id} is outdated! Ignoring it.")
-                return
             }
 
             is SuccessfullyUpdated -> {
@@ -35,16 +31,11 @@ class DeliveryUpdateProcessor(
 
                 orderRepository.update(result.updatedOrder)
 
-                if (order.customer.emailNotificationsEnabled) {
+                if (order!!.customer.emailNotificationsEnabled) {
                     emailSystem.send(result.email)
                 }
             }
         }
-
-    }
-
-    private fun monitorUnknownUpdate() {
-        monitor("updates.unknown")
     }
 
     private fun monitor(eventName: String) {
