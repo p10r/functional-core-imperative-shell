@@ -1,6 +1,5 @@
 package com.example.fcis
 
-import com.example.fcis.Order.StatusDetails
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Metrics
@@ -21,48 +20,28 @@ class DeliveryUpdateProcessor(
             return
         }
 
-        val result = order.process(deliveryUpdate)
+        val result = order.process(deliveryUpdate, now)
+
         if (result is OutdatedUpdate) {
             monitor(result.eventName)
             log("Incoming update ${deliveryUpdate.id} is outdated! Ignoring it.")
             return
         }
 
-        order.updateWith(deliveryUpdate)
+        if (result is SuccessfullyUpdated) {
+            log("Processed update ${deliveryUpdate.id}")
+            monitor(result.eventName)
 
-        if (order.customer.emailNotificationsEnabled) {
-            emailSystem.send(statusUpdateEmailOf(order))
+            orderRepository.update(result.updatedOrder)
+
+            if (order.customer.emailNotificationsEnabled) {
+                emailSystem.send(result.email)
+            }
         }
-
-        log("Processed update ${deliveryUpdate.id}")
-        monitorSuccessfulUpdate()
-    }
-
-    private fun Order.updateWith(deliveryUpdate: DeliveryUpdate) = copy(
-        currentStatusDetails = StatusDetails(
-            currentStatus = deliveryUpdate.newStatus,
-            updatedAt = this@DeliveryUpdateProcessor.now()
-        )
-    ).let { orderRepository.update(it) }
-
-    private fun statusUpdateEmailOf(order: Order) = with(order) {
-        Email(
-            recipient = customer.emailAddress,
-            topic = "Your order $orderId has changed it's status!",
-            body = """
-        Hi,
-        Your order $orderId has changed it's status to ${currentStatusDetails.currentStatus}.
-        Check the website for more info.
-        """.trimIndent()
-        )
     }
 
     private fun monitorUnknownUpdate() {
         monitor("updates.unknown")
-    }
-
-    private fun monitorSuccessfulUpdate() {
-        monitor("updates.successful")
     }
 
     private fun monitor(eventName: String) {
