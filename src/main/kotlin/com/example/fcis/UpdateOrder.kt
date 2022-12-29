@@ -8,7 +8,7 @@ sealed interface UpdateOrderResult
 
 data class SuccessfullyUpdated(
     val updatedOrder: Order,
-    val email: Email,
+    val email: Email?,
     val eventName: String,
 ) : UpdateOrderResult
 
@@ -57,16 +57,18 @@ private fun DeliveryUpdate.isOlderThan(currentStatusDetails: Order.StatusDetails
 private fun Instant.toUTC(): LocalDateTime =
     atOffset(ZoneOffset.UTC).toLocalDateTime()
 
-private fun statusUpdateEmailOf(order: Order) = with(order) {
-    Email(
-        recipient = customer.emailAddress,
-        topic = "Your order $orderId has changed it's status!",
-        body = """
-        Hi,
-        Your order $orderId has changed it's status to ${currentStatusDetails.currentStatus}.
-        Check the website for more info.
-        """.trimIndent()
-    )
+private fun statusUpdateEmailOf(order: Order): Email? = with(order) {
+    if (order.customer.emailNotificationsEnabled)
+        Email(
+            recipient = customer.emailAddress,
+            topic = "Your order $orderId has changed it's status!",
+            body = """
+                    Hi,
+                    Your order $orderId has changed it's status to ${currentStatusDetails.currentStatus}.
+                    Check the website for more info.
+                    """.trimIndent()
+        )
+    else null
 }
 
 private fun Order.updateWith(deliveryUpdate: DeliveryUpdate, now: () -> Instant) = copy(
