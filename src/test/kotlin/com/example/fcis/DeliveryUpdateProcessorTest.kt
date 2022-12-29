@@ -1,12 +1,17 @@
 package com.example.fcis
 
+import com.oneeyedmen.okeydoke.Approver
+import com.oneeyedmen.okeydoke.junit5.ApprovalsExtension
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import java.time.Instant
 
+@ExtendWith(ApprovalsExtension::class)
 class DeliveryUpdateProcessorTest {
     val orderRepository = mockk<OrderRepository>()
     val emailSystem = mockk<EmailSystem>()
@@ -20,7 +25,7 @@ class DeliveryUpdateProcessorTest {
     )
 
     @Test
-    fun `sends an email to customer after a successful delivery update`() {
+    fun `sends an email to customer after a successful delivery update`(approver: Approver) {
         val anOrder = anOrderOf()
         val aValidUpdate = aDeliveryUpdateOf(anOrder.id)
 
@@ -30,7 +35,9 @@ class DeliveryUpdateProcessorTest {
 
         deliveryUpdateProcessor.process(aValidUpdate)
 
-        verify { emailSystem.send(any()) }
+        val capturedEmail = slot<Email>()
+        verify { emailSystem.send(capture(capturedEmail)) }
+        approver.assertApproved(capturedEmail.captured)
     }
 
     @Test

@@ -1,0 +1,3 @@
+Email(recipient=test@example.com, topic=Your order oderId has changed it's status!, body=Hi,
+Your order oderId has changed it's status to DISPATCHED.
+Check the website for more info.)
