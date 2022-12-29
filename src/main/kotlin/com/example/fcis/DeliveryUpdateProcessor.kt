@@ -65,19 +65,19 @@ class DeliveryUpdateProcessor(
         atOffset(ZoneOffset.UTC).toLocalDateTime()
 
     private fun monitorUnknownUpdate() {
-        Counter.builder("updates.unknown")
-            .register(meterRegistry)
-            .increment()
+        monitor("updates.unknown")
     }
 
     private fun monitorOutdatedUpdate() {
-        Counter.builder("updates.outdated")
-            .register(meterRegistry)
-            .increment()
+        monitor("updates.outdated")
     }
 
     private fun monitorSuccessfulUpdate() {
-        Counter.builder("updates.successful")
+        monitor("updates.successful")
+    }
+
+    private fun monitor(eventName: String) {
+        Counter.builder(eventName)
             .register(meterRegistry)
             .increment()
     }
