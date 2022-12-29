@@ -5,6 +5,7 @@ import com.oneeyedmen.okeydoke.junit5.ApprovalsExtension
 import io.kotest.assertions.asClue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeTypeOf
+import io.mockk.every
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import java.time.Instant
@@ -60,5 +61,13 @@ class UpdateOrderTest {
 
         existingOrder.process(anOutdatedUpdate).shouldBeTypeOf<OutdatedUpdate>()
             .eventName shouldBe "updates.outdated"
+    }
+
+    @Test
+    fun `monitors when corresponding order doesn't exist`() {
+        val missingOrder: Order? = null
+        val anUnknownUpdate = aDeliveryUpdateOf(orderId = "UNKNOWN")
+        missingOrder.process(anUnknownUpdate).shouldBeTypeOf<UnknownUpdate>()
+            .eventName shouldBe "updates.unknown"
     }
 }

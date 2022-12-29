@@ -22,22 +22,25 @@ class DeliveryUpdateProcessor(
 
         val result = order.process(deliveryUpdate, now)
 
-        if (result is OutdatedUpdate) {
-            monitor(result.eventName)
-            log("Incoming update ${deliveryUpdate.id} is outdated! Ignoring it.")
-            return
-        }
+        when (result) {
+            is OutdatedUpdate      -> {
+                monitor(result.eventName)
+                log("Incoming update ${deliveryUpdate.id} is outdated! Ignoring it.")
+                return
+            }
 
-        if (result is SuccessfullyUpdated) {
-            log("Processed update ${deliveryUpdate.id}")
-            monitor(result.eventName)
+            is SuccessfullyUpdated -> {
+                log("Processed update ${deliveryUpdate.id}")
+                monitor(result.eventName)
 
-            orderRepository.update(result.updatedOrder)
+                orderRepository.update(result.updatedOrder)
 
-            if (order.customer.emailNotificationsEnabled) {
-                emailSystem.send(result.email)
+                if (order.customer.emailNotificationsEnabled) {
+                    emailSystem.send(result.email)
+                }
             }
         }
+
     }
 
     private fun monitorUnknownUpdate() {

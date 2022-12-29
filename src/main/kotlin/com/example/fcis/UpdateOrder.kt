@@ -18,10 +18,24 @@ data class OutdatedUpdate(
     val eventName: String,
 ) : UpdateOrderResult
 
-fun Order.process(
+data class UnknownUpdate(
+    val updateId: String,
+    val orderId: String,
+    val eventName: String,
+) : UpdateOrderResult
+
+fun Order?.process(
     deliveryUpdate: DeliveryUpdate,
     now: () -> Instant = Instant::now
 ): UpdateOrderResult {
+    if (this == null) {
+        return UnknownUpdate(
+            updateId = deliveryUpdate.id,
+            orderId = deliveryUpdate.orderId,
+            eventName = "updates.unknown"
+        )
+    }
+
     if (deliveryUpdate.isOlderThan(currentStatusDetails)) {
         return OutdatedUpdate(
             updateId = deliveryUpdate.id,
