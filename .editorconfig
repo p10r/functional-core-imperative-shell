@@ -30,7 +30,7 @@ ij_kotlin_imports_layout = *, java.**, javax.**, kotlin.**, ^
 ij_kotlin_name_count_to_use_star_import = 999
 ij_kotlin_name_count_to_use_star_import_for_members = 999
 ij_kotlin_allow_trailing_comma = true
-ij_kotlin_align_in_columns_case_branch = true
+ij_kotlin_align_in_columns_case_branch = false
 ij_kotlin_code_style_defaults = KOTLIN_OFFICIAL
 ij_kotlin_packages_to_use_import_on_demand = unset
 

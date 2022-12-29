@@ -14,12 +14,12 @@ class DeliveryUpdateProcessor(
         val order = orderRepository.findByIdOrNull(deliveryUpdate.orderId)
 
         when (val updateResult = order.process(deliveryUpdate, now)) {
-            is UnknownUpdate       -> {
+            is UnknownUpdate -> {
                 monitor(updateResult.eventName)
                 log("No order with id ${deliveryUpdate.orderId} in database!")
             }
 
-            is OutdatedUpdate      -> {
+            is OutdatedUpdate -> {
                 monitor(updateResult.eventName)
                 log("Incoming update ${deliveryUpdate.id} is outdated! Ignoring it.")
             }

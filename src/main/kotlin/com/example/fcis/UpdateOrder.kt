@@ -4,47 +4,27 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
-sealed interface UpdateOrderResult
-
-data class SuccessfullyUpdated(
-    val updatedOrder: Order,
-    val email: Email?,
-    val eventName: String,
-) : UpdateOrderResult
-
-data class OutdatedUpdate(
-    val updateId: String,
-    val orderId: String,
-    val eventName: String,
-) : UpdateOrderResult
-
-data class UnknownUpdate(
-    val updateId: String,
-    val orderId: String,
-    val eventName: String,
-) : UpdateOrderResult
-
 fun Order?.process(
     deliveryUpdate: DeliveryUpdate,
     now: () -> Instant = Instant::now
-): UpdateOrderResult {
-    if (this == null) {
-        return UnknownUpdate(
+): UpdateOrderResult = when {
+    this == null -> {
+        UnknownUpdate(
             updateId = deliveryUpdate.id,
             orderId = deliveryUpdate.orderId,
             eventName = "updates.unknown"
         )
     }
 
-    if (deliveryUpdate.isOlderThan(currentStatusDetails)) {
-        return OutdatedUpdate(
+    deliveryUpdate.isOlderThan(currentStatusDetails) -> {
+        OutdatedUpdate(
             updateId = deliveryUpdate.id,
             orderId = orderId,
             eventName = "updates.outdated"
         )
     }
 
-    return SuccessfullyUpdated(
+    else -> SuccessfullyUpdated(
         updatedOrder = this.updateWith(deliveryUpdate, now),
         email = statusUpdateEmailOf(this),
         eventName = "updates.successful"
