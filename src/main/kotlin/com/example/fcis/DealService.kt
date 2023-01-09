@@ -4,7 +4,7 @@ import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import java.time.Instant
 
-class DeliveryUpdateProcessor(
+class DealService(
     private val orderRepository: OrderRepository,
     private val emailSystem: EmailSystem,
     private val meterRegistry: MeterRegistry,

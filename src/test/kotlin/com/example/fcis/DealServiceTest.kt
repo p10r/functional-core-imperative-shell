@@ -12,12 +12,12 @@ import org.junit.jupiter.api.extension.ExtendWith
 import java.time.Instant
 
 @ExtendWith(ApprovalsExtension::class)
-class DeliveryUpdateProcessorTest {
+class DealServiceTest {
     val orderRepository = mockk<OrderRepository>()
     val emailSystem = mockk<EmailSystem>()
     val meterRegistry = SimpleMeterRegistry()
     val now: Instant = Instant.now()
-    val deliveryUpdateProcessor = DeliveryUpdateProcessor(
+    val dealService = DealService(
         orderRepository,
         emailSystem,
         meterRegistry,
@@ -33,7 +33,7 @@ class DeliveryUpdateProcessorTest {
         every { orderRepository.update(any()) } returns anOrder
         every { emailSystem.send(any()) } returns "emailId"
 
-        deliveryUpdateProcessor.process(aValidUpdate)
+        dealService.process(aValidUpdate)
 
         val capturedEmail = slot<Email>()
         verify { emailSystem.send(capture(capturedEmail)) }
@@ -49,7 +49,7 @@ class DeliveryUpdateProcessorTest {
         every { orderRepository.update(any()) } returns anOrder
         every { emailSystem.send(any()) } returns "emailId"
 
-        deliveryUpdateProcessor.process(aValidUpdate)
+        dealService.process(aValidUpdate)
 
         verify {
             orderRepository.update(
@@ -73,7 +73,7 @@ class DeliveryUpdateProcessorTest {
         every { orderRepository.update(any()) } returns anOrder
         every { emailSystem.send(any()) } returns "emailId"
 
-        deliveryUpdateProcessor.process(aValidUpdate)
+        dealService.process(aValidUpdate)
 
         meterRegistry.shouldHaveOnlyMeterWithValue(meterId = "updates.successful", count = 1)
     }
@@ -83,7 +83,7 @@ class DeliveryUpdateProcessorTest {
         every { orderRepository.findByIdOrNull(any()) } returns null
 
         val anUnknownUpdate = aDeliveryUpdateOf(orderId = "UNKNOWN")
-        deliveryUpdateProcessor.process(anUnknownUpdate)
+        dealService.process(anUnknownUpdate)
 
         meterRegistry.shouldHaveOnlyMeterWithValue(
             meterId = "updates.unknown",
@@ -96,7 +96,7 @@ class DeliveryUpdateProcessorTest {
         every { orderRepository.findByIdOrNull(any()) } returns null
 
         val anUnknownUpdate = aDeliveryUpdateOf(orderId = "UNKNOWN")
-        deliveryUpdateProcessor.process(anUnknownUpdate)
+        dealService.process(anUnknownUpdate)
 
         verify(exactly = 0) { emailSystem.send(any()) }
     }
@@ -111,7 +111,7 @@ class DeliveryUpdateProcessorTest {
 
         every { orderRepository.findByIdOrNull(any()) } returns existingOrder
 
-        deliveryUpdateProcessor.process(anOutdatedUpdate)
+        dealService.process(anOutdatedUpdate)
 
         verify(exactly = 0) { emailSystem.send(any()) }
     }
@@ -126,7 +126,7 @@ class DeliveryUpdateProcessorTest {
 
         every { orderRepository.findByIdOrNull(any()) } returns existingOrder
 
-        deliveryUpdateProcessor.process(anOutdatedUpdate)
+        dealService.process(anOutdatedUpdate)
 
         meterRegistry.shouldHaveOnlyMeterWithValue(
             meterId = "updates.outdated",
@@ -144,7 +144,7 @@ class DeliveryUpdateProcessorTest {
 
         val aValidUpdate = aDeliveryUpdateOf(anOrder.id)
 
-        deliveryUpdateProcessor.process(aValidUpdate)
+        dealService.process(aValidUpdate)
 
         verify(exactly = 0) { emailSystem.send(any()) }
     }
