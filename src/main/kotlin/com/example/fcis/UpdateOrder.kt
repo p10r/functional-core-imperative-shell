@@ -21,26 +21,25 @@ data class Event(
     val timestamp: Instant = Instant.now(),
 )
 
-fun update(
-    order: Order?,
+fun Order?.update(
     deliveryUpdate: DeliveryUpdate,
     now: Instant
 ): UpdateResult {
-    if (order == null)
+    if (this == null)
         return UnknownOrder(unknownOrderEvent(deliveryUpdate))
 
-    if (deliveryUpdate.isOlderThan(order.currentStatusDetails))
+    if (deliveryUpdate.isOlderThan(currentStatusDetails))
         return OutdatedUpdate(outdatedEvent(deliveryUpdate))
 
     if (deliveryUpdate.newStatus == RECEIVED || deliveryUpdate.newStatus == RECEIVED_REQUEST)
         return UpdateIgnored(ignoredEvent(deliveryUpdate))
 
-    val updated = order.updateWith(deliveryUpdate, now)
+    val updated = updateWith(deliveryUpdate, now)
 
-    return if (order.customer.emailNotificationsEnabled) {
+    return if (customer.emailNotificationsEnabled) {
         SuccessfulUpdate(
             updatedOrder = updated,
-            email = statusUpdateEmailOf(order),
+            email = statusUpdateEmailOf(this),
             event = successEvent(deliveryUpdate)
         )
     } else {

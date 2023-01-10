@@ -13,7 +13,7 @@ class DealService(
     fun process(deliveryUpdate: DeliveryUpdate) {
         val order = orderRepository.findByIdOrNull(deliveryUpdate.orderId)
 
-        return when (val result = update(order, deliveryUpdate, now())) {
+        return when (val result = order.update(deliveryUpdate, now())) {
             is SuccessfulUpdate -> {
                 orderRepository.update(result.updatedOrder)
                 result.email?.let { emailSystem.send(it) }
