@@ -29,9 +29,12 @@ class DealService(
 
         orderRepository.update(order.updateWith(deliveryUpdate, now))
 
-        if (order.customer.emailNotificationsEnabled) {
-            emailSystem.send(statusUpdateEmailOf(order))
-        }
+        when (val result = update(order, deliveryUpdate)) {
+            is SuccessfulUpdate -> result.email?.let { emailSystem.send(it) }
+            else -> TODO()
+            //This will not compile because of 'Unresolved reference: email'
+            //is UnknownOrder -> emailSystem.send(result.email)
+            }
 
         monitor("updates.successful")
         log("Processed update ${deliveryUpdate.id}")
