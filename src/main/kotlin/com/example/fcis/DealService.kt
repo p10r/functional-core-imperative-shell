@@ -15,6 +15,7 @@ class DealService(
     fun process(deliveryUpdate: DeliveryUpdate) {
         val order = orderRepository.findByIdOrNull(deliveryUpdate.orderId)
 
+
         if (order == null) {
             log("No order with id ${deliveryUpdate.orderId} in database!")
             monitor("updates.unknown")
@@ -27,14 +28,20 @@ class DealService(
             return
         }
 
-        orderRepository.update(order.updateWith(deliveryUpdate, now))
 
-        when (val result = update(order, deliveryUpdate)) {
-            is SuccessfulUpdate -> result.email?.let { emailSystem.send(it) }
-            else -> TODO()
+        when (val result = update(order, deliveryUpdate, now())) {
+            is SuccessfulUpdate -> {
+                orderRepository.update(result.updatedOrder)
+                result.email?.let { emailSystem.send(it) }
+            }
+
+            is UnknownOrder -> {
+                log("No order with id ${deliveryUpdate.orderId} in database!")
+                monitor("updates.unknown")
+            }
             //This will not compile because of 'Unresolved reference: email'
             //is UnknownOrder -> emailSystem.send(result.email)
-            }
+        }
 
         monitor("updates.successful")
         log("Processed update ${deliveryUpdate.id}")
@@ -46,26 +53,6 @@ class DealService(
 
     private fun Instant.toUTC(): LocalDateTime =
         atOffset(ZoneOffset.UTC).toLocalDateTime()
-
-    private fun statusUpdateEmailOf(order: Order) = with(order) {
-        Email(
-            recipient = customer.emailAddress,
-            topic = "Your order $orderId has changed it's status!",
-            body = """
-               Hi,
-               Your order $orderId has changed it's status to ${currentStatusDetails.currentStatus}.
-               Check the website for more info.
-               """.trimIndent()
-        )
-    }
-
-    private fun Order.updateWith(deliveryUpdate: DeliveryUpdate, now: () -> Instant) = copy(
-        currentStatusDetails = Order.StatusDetails(
-            currentStatus = deliveryUpdate.newStatus,
-            updatedAt = now()
-        )
-    )
-
 
     private fun monitor(eventName: String) {
         Counter.builder(eventName)

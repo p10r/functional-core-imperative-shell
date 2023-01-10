@@ -1,19 +1,27 @@
 package com.example.fcis
 
+import java.time.Instant
+
 sealed interface UpdateResult
 object UnknownOrder : UpdateResult
-data class SuccessfulUpdate(val email: Email?) : UpdateResult
+data class SuccessfulUpdate(
+    val updatedOrder: Order,
+    val email: Email?
+) : UpdateResult
 
 fun update(
     order: Order?,
-    deliveryUpdate: DeliveryUpdate
+    deliveryUpdate: DeliveryUpdate,
+    now: Instant
 ): UpdateResult {
     if (order == null) return UnknownOrder
 
-    return if (order.customer.emailNotificationsEnabled)
-        SuccessfulUpdate(statusUpdateEmailOf(order))
-    else
-        SuccessfulUpdate(null)
+    val updated = order.updateWith(deliveryUpdate, now)
+
+    return if (order.customer.emailNotificationsEnabled) {
+        SuccessfulUpdate(updated, statusUpdateEmailOf(order))
+    } else
+        SuccessfulUpdate(updated, email = null)
 }
 
 private fun statusUpdateEmailOf(order: Order) = with(order) {
@@ -27,3 +35,10 @@ private fun statusUpdateEmailOf(order: Order) = with(order) {
                """.trimIndent()
     )
 }
+
+private fun Order.updateWith(deliveryUpdate: DeliveryUpdate, now: Instant) = copy(
+    currentStatusDetails = Order.StatusDetails(
+        currentStatus = deliveryUpdate.newStatus,
+        updatedAt = now
+    )
+)
