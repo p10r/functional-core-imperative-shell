@@ -15,7 +15,6 @@ class DealService(
     fun process(deliveryUpdate: DeliveryUpdate) {
         val order = orderRepository.findByIdOrNull(deliveryUpdate.orderId)
 
-
         if (order == null) {
             log("No order with id ${deliveryUpdate.orderId} in database!")
             monitor("updates.unknown")
@@ -33,18 +32,20 @@ class DealService(
             is SuccessfulUpdate -> {
                 orderRepository.update(result.updatedOrder)
                 result.email?.let { emailSystem.send(it) }
+                monitor("updates.successful")
+                log("Processed update ${deliveryUpdate.id}")
             }
 
             is UnknownOrder -> {
                 log("No order with id ${deliveryUpdate.orderId} in database!")
                 monitor("updates.unknown")
             }
-            //This will not compile because of 'Unresolved reference: email'
-            //is UnknownOrder -> emailSystem.send(result.email)
-        }
 
-        monitor("updates.successful")
-        log("Processed update ${deliveryUpdate.id}")
+            is UpdateIgnored -> {
+                log("Update ${deliveryUpdate.id} ignored, status was ${deliveryUpdate.newStatus}.")
+                monitor("updates.ignored")
+            }
+        }
     }
 
 

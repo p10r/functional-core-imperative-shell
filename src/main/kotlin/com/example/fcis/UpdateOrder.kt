@@ -1,9 +1,11 @@
 package com.example.fcis
 
+import com.example.fcis.Order.Status.*
 import java.time.Instant
 
 sealed interface UpdateResult
 object UnknownOrder : UpdateResult
+object UpdateIgnored : UpdateResult
 data class SuccessfulUpdate(
     val updatedOrder: Order,
     val email: Email?
@@ -14,7 +16,11 @@ fun update(
     deliveryUpdate: DeliveryUpdate,
     now: Instant
 ): UpdateResult {
-    if (order == null) return UnknownOrder
+    if (order == null)
+        return UnknownOrder
+
+    if (deliveryUpdate.newStatus == RECEIVED || deliveryUpdate.newStatus == RECEIVED_REQUEST)
+        return UpdateIgnored
 
     val updated = order.updateWith(deliveryUpdate, now)
 

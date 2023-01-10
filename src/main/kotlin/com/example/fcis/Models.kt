@@ -21,7 +21,7 @@ data class Order(
 
     @Suppress("unused")
     enum class Status {
-        RECEIVED, IN_PROGRESS, DISPATCHED, DELIVERED
+        RECEIVED, RECEIVED_REQUEST, IN_PROGRESS, DISPATCHED, DELIVERED
     }
 }
 
